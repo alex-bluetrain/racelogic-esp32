@@ -1,3 +1,17 @@
+/*
+
+'<'+
+truncate([SpeedLocal]) +'\t'+ 
+truncate([MaxSpeedLocal]) +'\t'+ 
+format([CurrentLapTime],'mm\\"ss"\'"fff') + '\t'+
+format([CurrentLap],'000') + '\t'+
+format([CompletedLaps],'000') + '\t'+
+isnull([PersistantTrackerPlugin.AllTimeBestLiveDeltaSeconds],0) +'\t'+
+isnull([PersistantTrackerPlugin.AllTimeBestLiveDeltaProgressSeconds],0) +'\t'+
+[GameRawData.Physics.PacketId] + '>\n'
+
+ */
+ 
 /* CONFIG */
 #define BTN_DOWN   27
 #define BTN_SELECT 26
@@ -8,8 +22,18 @@
 #include <U8g2lib.h>
 #include <Adafruit_NeoPixel.h>
 #include "impact19.h"
+#include "impact14.h"
+#include "impact20.h"
+#include "impact22.h"
 #include "impact38.h"
+#include "impact48t33.h"
+#include "impact48laptime.h"
+#include "impact36laptime.h"
+#include "impact42laptime.h"
 #include "impact72.h"
+#include "impact65.h"
+#include "impact68.h"
+#include "ArialNB18.h"
 
 #ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
@@ -24,11 +48,36 @@ U8G2_SSD1322_NHD_256X64_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 13, /* re
 Adafruit_NeoPixel strip(2, LED_PIN, NEO_GRB);
 
 // datos tal como los recibo por serial
+int startIdx;
+
+//Live Speed
 char speed[5];
 String maxx;
 char maxSpeed[5];
 int MaxSpeed=0;
+int maxspeeed=0;
+
+//Lap Time
+String lapp;
 char laptime[20];
+
+//Lap count
+String currentlapcount;
+String completedlapscount;
+char currentlap[5];
+char completedlaps[5];
+
+//Lateral G  -----------------------
+String lateralgcount;
+char lateralg[20];
+
+//Longitudinal G  -----------------------
+String longitudinalgcount;
+char longitudinalg[20];
+
+//Lateral G Bar
+
+//Live Delta
 char liveDelta[10];
 char liveDeltaProgress[10];
 
@@ -42,8 +91,8 @@ char buff[256];
 int bytesReceived;
 int retries=0;
 bool newDatagram;
-int startIdx;
-int maxspeeed=0;
+
+int s1=0,s2=0,s3=0,s4=0,s5=0,s6=0; //--------------------
 int currentScreen = 0;
 bool inMenu=false;
 uint8_t current_selection = 0;
@@ -69,27 +118,81 @@ void loop(void) {
     int button = readButtons();
     switch(button) {
         case 1:
-            currentScreen=0;
+            if(currentScreen<5)
+            currentScreen=currentScreen+1;        delay(500);
+
             break;
         case 3: 
-            currentScreen=1;
+            if(currentScreen>0)
+            currentScreen=currentScreen-1;        delay(500);
+
             break;
     }
     getDatagram();
     if (newDatagram) parseDatagram();
 
     if (currentScreen == 0) {
+       if(s1==0){predictivelaptiming();}
         renderDelta();
         renderLeds();
+        s2=0;
+        s3=0;
+        s4=0;
+        s5=0;
+        s6=0;
     } 
     if (currentScreen == 1) {
+       if(s2==0){livespeed();}
        renderSpeed();
+       s1=0;       
+       s3=0;
+       s4=0;
+       s5=0;
+       s6=0;
+    }
+    if (currentScreen == 2) {
+       if(s3==0){laptimingtext();}
+       lapptime();
+       s1=0;
+       s2=0;       
+       s4=0;
+       s5=0;
+       s6=0;
+    }
+    if (currentScreen == 3) {
+       if(s4==0){lapcounttext();}
+       Lapcount();
+       s1=0;
+       s2=0;
+       s3=0;
+       s5=0;
+       s6=0;
+    }
+    if (currentScreen == 4) {
+       if(s5==0){lateralgtext();}
+       Lateralg();
+       s1=0;
+       s2=0;
+       s3=0;
+       s4=0;
+       s6=0;
+    }
+    if (currentScreen == 5) {
+       if(s6==0){longitudinalgtext();}
+       Longitudinalg();
+       s1=0;
+       s2=0;
+       s3=0;
+       s4=0;
+       s5=0;
     }
 }
+    
 int readButtons(void) {
-   if (digitalRead(BTN_DOWN) == LOW) return 1;
-   if (digitalRead(BTN_SELECT) == LOW) return 2;
-   if (digitalRead(BTN_UP) == LOW) return 3;
+   if (digitalRead(BTN_DOWN) == LOW) {return 1;}
+   if (digitalRead(BTN_SELECT) == LOW) {return 2;}
+   if (digitalRead(BTN_UP) == LOW) {return 3;}
+   
    return 0;
 }
 
@@ -190,15 +293,33 @@ void renderSpeed() {
     int posx = 190 - width;
     u8g2.drawStr(posx, 64-0, speed);
     // KMH
-    u8g2.setFont(impact19);
+    u8g2.setFont(ArialNB18);
     u8g2.drawStr(201, 64-7, "km/h");
     //max speed
-    u8g2.setFont(impact19);
+    u8g2.setFont(ArialNB18);
     u8g2.drawStr(10, 32, "Max");
     u8g2.setFont(impact19);
     u8g2.drawStr(10, 55,maxx.c_str());
     u8g2.sendBuffer();   
 } 
+
+
+void lapptime(){
+
+ lapp = String(laptime);
+ 
+    u8g2.clearBuffer();
+    u8g2.setFont(impact42laptime);
+    //u8g2.drawStr(5, 60, lapp.c_str());  //impact48laptime
+    //u8g2.drawStr(30, 54, lapp.c_str());  //impact36laptime
+    u8g2.drawStr(18, 57, lapp.c_str());  //impact42laptime
+    u8g2.setFont(impact19);
+    //u8g2.drawStr(201, 25, "Best");
+    //u8g2.drawStr(215, 40, "+");
+    //u8g2.drawStr(230, 60, liveDelta);
+     u8g2.sendBuffer();   
+
+  }
 
 float rnd(float number) { 
     float value = (int)(number* 100 + .5); 
@@ -237,6 +358,121 @@ void getDatagram() {
     }
 }
 
+void predictivelaptiming(){  ///delta
+     
+     u8g2.clearBuffer();
+     u8g2.setFont(impact20);
+     u8g2.drawStr(7, 38, "PREDICTIVE LAP TIMING");
+     u8g2.sendBuffer();   
+     delay(2000);
+     s1=88;
+}
+
+
+void livespeed(){ 
+
+     u8g2.clearBuffer();
+     u8g2.setFont(impact20);
+     u8g2.drawStr(98, 33, "SPEED");
+     u8g2.setFont(impact14);
+     u8g2.drawStr(58, 56, "PRESS Q TO RESET");
+     u8g2.sendBuffer();   
+     delay(2000);
+     s2=88;
+}
+
+void laptimingtext(){ //Laptime menu text
+
+     u8g2.clearBuffer();
+     u8g2.setFont(impact20);
+     u8g2.drawStr(70, 38, "LAP TIMING");
+     u8g2.sendBuffer();   
+     delay(2000);
+     s3=88;
+}
+
+void lapcounttext(){
+     u8g2.clearBuffer();
+     u8g2.setFont(impact20);
+     u8g2.drawStr(70, 38, "LAP COUNT");
+     u8g2.sendBuffer();   
+     delay(2000);
+     s4=88;
+}
+
+  void Lapcount (){
+
+  currentlapcount = String(currentlap);
+  completedlapscount = String(completedlaps);
+ 
+    u8g2.clearBuffer();
+    u8g2.setFont(impact14);
+    u8g2.drawStr(23, 19, "TOTAL LAPS");
+    u8g2.drawStr(147, 19, "CURRENT LAP");
+    u8g2.setFont(impact36laptime);
+    u8g2.drawStr(27, 64, completedlapscount.c_str());
+    u8g2.setFont(impact36laptime);
+    u8g2.drawStr(156, 64, currentlapcount.c_str());
+    u8g2.drawHLine(0,22,255);
+    u8g2.drawVLine(129,0,64);
+    u8g2.sendBuffer(); 
+
+}
+
+  void lateralgtext(){
+
+     u8g2.clearBuffer();
+     u8g2.setFont(impact20);
+     u8g2.drawStr(75, 33, "LATERAL G");
+     u8g2.setFont(impact14);
+     u8g2.drawStr(58, 56, "PRESS Q TO RESET");
+     u8g2.sendBuffer();   
+     delay(2000);
+     s5=88;
+}
+
+
+  void Lateralg (){
+
+  lateralgcount = String(lateralg);
+  
+    u8g2.clearBuffer();
+    u8g2.setFont(impact42laptime);
+    u8g2.drawStr(20, 57, lateralgcount.c_str());//-----------------------------
+    u8g2.drawStr(140, 58, "g");
+    u8g2.setFont(ArialNB18);
+    u8g2.drawStr(205, 25, "Max");
+    u8g2.drawHLine(215,34,20);  //Horizontal line (start, height, distance)
+    u8g2.sendBuffer(); 
+    
+}
+
+void longitudinalgtext(){
+
+     u8g2.clearBuffer();
+     u8g2.setFont(impact20);
+     u8g2.drawStr(45, 33, "LONGITUDINAL G");
+     u8g2.setFont(impact14);
+     u8g2.drawStr(58, 56, "PRESS Q TO RESET");
+     u8g2.sendBuffer();   
+     delay(2000);
+     s6=88;
+}
+
+void Longitudinalg (){
+
+  longitudinalgcount = String(longitudinalg);
+  
+    u8g2.clearBuffer();
+    u8g2.setFont(impact42laptime);
+    u8g2.drawStr(20, 57, longitudinalgcount.c_str());//-----------------------------
+    u8g2.drawStr(140, 58, "g");
+    u8g2.setFont(ArialNB18);
+    u8g2.drawStr(205, 25, "Max");
+    u8g2.drawVLine(190,25,25);
+    u8g2.sendBuffer(); 
+    
+}
 void parseDatagram() {
     char* idx;
     idx = strtok(buff, "\t");
@@ -245,6 +481,14 @@ void parseDatagram() {
     if (idx != NULL) strcpy(maxSpeed, idx);
     idx = strtok(NULL, "\t");
     if (idx != NULL) strcpy(laptime, idx);
+    idx = strtok(NULL, "\t");
+    if (idx != NULL) strcpy(currentlap, idx);
+    idx = strtok(NULL, "\t");
+    if (idx != NULL) strcpy(completedlaps, idx);
+    idx = strtok(NULL, "\t");
+    if (idx != NULL) strcpy(lateralg, idx);
+    idx = strtok(NULL, "\t");
+    if (idx != NULL) strcpy(longitudinalg, idx);
     idx = strtok(NULL, "\t");
     if (idx != NULL) strcpy(liveDelta, idx);
     idx = strtok(NULL, "\t");
