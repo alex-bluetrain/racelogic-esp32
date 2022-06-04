@@ -34,6 +34,7 @@ isnull([PersistantTrackerPlugin.AllTimeBestLiveDeltaProgressSeconds],0) +'\t'+
 #include "impact65.h"
 #include "impact68.h"
 #include "ArialNB18.h"
+#include "logo.h"
 
 #ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
@@ -111,6 +112,17 @@ void setup(void) {
     u8g2.setContrast(255);
     strip.begin();
     strip.setBrightness(32);
+    splashScreen();
+}
+
+void splashScreen() {
+    int x = 128 - logo_width / 2;
+    int y = 32 - logo_height / 2;
+    u8g2.setFlipMode(1);   
+    u8g2.clearBuffer();
+    u8g2.drawXBM(x, y, logo_width, logo_height, logo_bits);
+    u8g2.sendBuffer();   
+    delay(3000);
 }
 
 void loop(void) {
