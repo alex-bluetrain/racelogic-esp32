@@ -2,7 +2,7 @@
 #define BTN_DOWN   27
 #define BTN_SELECT 26
 #define BTN_UP     25
-#define LED_PIN    4
+#define LED_PIN    16
  
 #include <Arduino.h>
 #include <U8g2lib.h>
@@ -19,14 +19,15 @@
 #endif
 
 
-//U8G2_SSD1322_NHD_256X64_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 13, /* reset=*/ 12);    // Enable U8G2_16BIT in u8g2.h
-U8G2_SSD1322_NHD_256X64_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 13, /* reset=*/ 14);    // Enable U8G2_16BIT in u8g2.h
+U8G2_SSD1322_NHD_256X64_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 13, /* reset=*/ 12);    // Enable U8G2_16BIT in u8g2.h
 
 Adafruit_NeoPixel strip(2, LED_PIN, NEO_GRB);
 
 // datos tal como los recibo por serial
 char speed[5];
+String maxx;
 char maxSpeed[5];
+int MaxSpeed=0;
 char laptime[20];
 char liveDelta[10];
 char liveDeltaProgress[10];
@@ -42,6 +43,7 @@ int bytesReceived;
 int retries=0;
 bool newDatagram;
 int startIdx;
+int maxspeeed=0;
 int currentScreen = 0;
 bool inMenu=false;
 uint8_t current_selection = 0;
@@ -58,13 +60,12 @@ void setup(void) {
         U8X8_PIN_NONE  /* home|cancel */
     );
     u8g2.setContrast(255);
-    u8g2.setFlipMode(1);
     strip.begin();
     strip.setBrightness(32);
 }
 
 void loop(void) {
-
+ u8g2.setFlipMode(1);
     int button = readButtons();
     switch(button) {
         case 1:
@@ -133,9 +134,9 @@ void renderLeds() {
 //        Serial.print(":");
 //        Serial.println(-v1);
     }
-    delay(5);
+    delay(1);
     strip.show();
-    delay(5);
+    delay(1);
 }
 
 void renderDelta() {
@@ -178,16 +179,25 @@ void renderDelta() {
 }
 
 void renderSpeed() {
+    
+    if(MaxSpeed<atoi(speed)){MaxSpeed=atoi(speed);}
+    if (digitalRead(BTN_SELECT) == LOW)  {MaxSpeed=0;}
+    maxx = String(MaxSpeed);
     u8g2.clearBuffer();
     // SPEED
     u8g2.setFont(impact72);
     int width = u8g2.getUTF8Width(speed);
-    int posx = 150 - width;
-    u8g2.drawStr(posx, 64-5, speed);
+    int posx = 190 - width;
+    u8g2.drawStr(posx, 64-0, speed);
     // KMH
     u8g2.setFont(impact19);
     u8g2.drawStr(201, 64-7, "km/h");
-    u8g2.sendBuffer();
+    //max speed
+    u8g2.setFont(impact19);
+    u8g2.drawStr(10, 32, "Max");
+    u8g2.setFont(impact19);
+    u8g2.drawStr(10, 55,maxx.c_str());
+    u8g2.sendBuffer();   
 } 
 
 float rnd(float number) { 
