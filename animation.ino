@@ -72,6 +72,9 @@ void drawTextIn(int frame_delay_ms=0) {
   for (int i=5; i>=1; i--) {
     drawFrame(i);
     delay(frame_delay_ms);
+    // draw same frame twice (to compensate it is just 5 frames)
+    drawFrame(i);
+    delay(frame_delay_ms);
   }
 }
 
@@ -79,13 +82,16 @@ void drawTextOut(int frame_delay_ms=0) {
   for (int i=1; i<=5; i++) {
     drawFrame(i);
     delay(frame_delay_ms);
+    // draw same frame twice (to compensate it is just 5 frames)
+    drawFrame(i);
+    delay(frame_delay_ms);
   }
 }
 
 void splashAnimation() {
-  int frame_delay_ms = 5;   // milliseconds to pause between frames
-  int logo_pause_ms = 2000; // milliseconds to pause on logo 
-  int text_pause_ms = 2000; // milliseconds to pause on text
+  int frame_delay_ms = 5;      // milliseconds to pause between frames
+  int logo_pause_ms = 2000;    // milliseconds to pause on logo 
+  int text_pause_ms = 2000;    // milliseconds to pause on text
   int ending_pause_ms = 1000;  // milliseconds to pause on end (black frame)
   
   u8g2.setFlipMode(1);
@@ -100,11 +106,11 @@ void splashAnimation() {
   drawBlackFrame();
   delay(frame_delay_ms);
 
-  drawTextIn(frame_delay_ms*2);
+  drawTextIn(frame_delay_ms);
   delay(text_pause_ms);
 
   // JP text flips out [1 to 5]
-  drawTextOut(frame_delay_ms*2);
+  drawTextOut(frame_delay_ms);
   drawBlackFrame();
   delay(ending_pause_ms);
 }
